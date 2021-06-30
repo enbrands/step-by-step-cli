@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 const program = require('commander')
 const inquirer = require('inquirer')
+const ora = require('ora')
+const download = require('download-git-repo')
+const { errLog, successLog } = require('../src/utils/log.js')
 
 console.log("i'm a cli")
 
@@ -28,6 +31,23 @@ program
       ])
       .then((answer) => {
         console.log(answer)
+        const spinner = ora()
+        spinner.text = '正在下载模板...'
+        spinner.start()
+        download(
+          '', // 模板仓库地址 例如：direct:http://
+          projectName,
+          { clone: true },
+          function (err) {
+            if (err) {
+              spinner.fail('模板下载失败')
+              errLog(err)
+            } else {
+              spinner.succeed('模板下载成功')
+              successLog('项目初始化完成')
+            }
+          }
+        )
       })
   })
 program.version('1.0.0').parse(process.argv)
