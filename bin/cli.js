@@ -1,53 +1,55 @@
 #!/usr/bin/env node
 const program = require('commander')
-const inquirer = require('inquirer')
-const ora = require('ora')
-const download = require('download-git-repo')
-const { errLog, successLog } = require('../src/utils/log.js')
+const chalk = require('chalk')
+const COMMAND_LIST = require('../src/command-config')
 
 console.log("i'm a cli")
 
 // 打印参数
 console.log(process.argv)
 
-program
-  .command('create <projectName>')
-  .description('create a new project')
-  .alias('c')
-  .option('-r, --react', 'react template')
-  .option('-v, --vue', 'vue template')
-  .option('-v2, --vue2', 'vue2 template')
-  .option('-v3, --vue3', 'vue3 template')
-  .action((projectName, options) => {
-    console.log(projectName, options)
-    inquirer
-      .prompt([
-        {
-          type: 'list',
-          name: 'frameTemplate',
-          message: '请选择框架类型',
-          choices: ['Vue3', 'Vue2', 'React']
-        }
-      ])
-      .then((answer) => {
-        console.log(answer)
-        const spinner = ora()
-        spinner.text = '正在下载模板...'
-        spinner.start()
-        download(
-          '', // 模板仓库地址 例如：direct:http://
-          projectName,
-          { clone: true },
-          function (err) {
-            if (err) {
-              spinner.fail('模板下载失败')
-              errLog(err)
-            } else {
-              spinner.succeed('模板下载成功')
-              successLog('项目初始化完成')
-            }
-          }
-        )
-      })
+// help命令 把example显示出去
+const help = () => {
+  console.log('\n')
+  console.log(chalk.green('如何使用:'))
+  COMMAND_LIST.forEach((command, index) => {
+    console.log('  ', chalk.keyword('orange')(index + 1), `${command.command}命令`)
+    command.examples.forEach((example) => {
+      console.log(`     - mycli ${example}`)
+    })
   })
+}
+
+/**
+ * 注册option
+ * @param {Object} commander commander实例
+ * @param {Object} option 每个命令配置对象
+ * @returns commander
+ */
+const registerOption = (commander, option) => {
+  return option && option.length ? commander.option(...option) : commander
+}
+/**
+ * 注册action
+ * @param {Object} commander commander实例
+ * @param {Object} commandEle 每个命令配置对象
+ * @returns commander
+ */
+const registerAction = (commander, commandEle) => {
+  const { command, description, alias, options, action } = commandEle
+  const c = commander
+    .command(command) // 命令的名称
+    .description(description) // 命令的描述
+    .alias(alias)
+  // 循环options
+  options && options.reduce(registerOption, c)
+  c.action(action)
+  return commander
+}
+
+// 循环创建命令
+COMMAND_LIST.reduce(registerAction, program)
+
+program.on('-h', help)
+program.on('--help', help)
 program.version('1.0.0').parse(process.argv)
