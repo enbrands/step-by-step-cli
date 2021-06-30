@@ -11,5 +11,8 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "commander": "^7.2.0"
+  }
 }
